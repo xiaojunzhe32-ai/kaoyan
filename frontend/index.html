@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>考研错题本 - 智能分析复习工具</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">考研错题本</div>
+    <div class="nav-links">
+      <a href="#" class="nav-link active" data-page="list">错题列表</a>
+      <a href="#" class="nav-link" data-page="add">添加错题</a>
+      <a href="#" class="nav-link" data-page="stats">统计看板</a>
+    </div>
+  </nav>
+
+  <main id="app">
+    <!-- 错题列表 -->
+    <section id="page-list" class="page active">
+      <div class="toolbar">
+        <select id="filter-subject" class="filter-select">
+          <option value="all">全部科目</option>
+          <option value="数学">数学</option>
+          <option value="英语">英语</option>
+          <option value="政治">政治</option>
+          <option value="专业课">专业课</option>
+        </select>
+        <select id="filter-status" class="filter-select">
+          <option value="all">全部状态</option>
+          <option value="unsolved">未解决</option>
+          <option value="solved">已解决</option>
+        </select>
+        <button class="btn btn-primary" onclick="loadQuestions()">刷新</button>
+      </div>
+      <div id="question-list" class="question-list"></div>
+      <div id="pagination" class="pagination"></div>
+    </section>
+
+    <!-- 添加错题 -->
+    <section id="page-add" class="page">
+      <form id="add-form" class="form-card">
+        <h2>添加错题</h2>
+        <div class="form-group">
+          <label>科目 *</label>
+          <select name="subject" required>
+            <option value="数学">数学</option>
+            <option value="英语">英语</option>
+            <option value="政治">政治</option>
+            <option value="专业课">专业课</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>章节</label>
+          <input type="text" name="chapter" placeholder="如: 高数-极限">
+        </div>
+        <div class="form-group">
+          <label>题型</label>
+          <select name="question_type">
+            <option value="">请选择</option>
+            <option value="选择题">选择题</option>
+            <option value="填空题">填空题</option>
+            <option value="计算题">计算题</option>
+            <option value="证明题">证明题</option>
+            <option value="解答题">解答题</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>题目内容 *</label>
+          <textarea name="question" rows="4" required placeholder="输入题目内容..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>我的答案</label>
+          <textarea name="my_answer" rows="2" placeholder="你写的答案..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>正确答案 *</label>
+          <textarea name="correct_answer" rows="2" required placeholder="正确答案..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>错误原因</label>
+          <textarea name="error_reason" rows="2" placeholder="如: 计算错误/概念不清/公式记错..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>难度</label>
+          <select name="difficulty">
+            <option value="1">1 - 简单</option>
+            <option value="2">2 - 较易</option>
+            <option value="3" selected>3 - 中等</option>
+            <option value="4">4 - 较难</option>
+            <option value="5">5 - 困难</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary">提交</button>
+      </form>
+    </section>
+
+    <!-- 统计看板 -->
+    <section id="page-stats" class="page">
+      <div id="stats-content" class="stats-grid"></div>
+    </section>
+
+    <!-- 详情弹窗 -->
+    <div id="detail-modal" class="modal" style="display:none;">
+      <div class="modal-content">
+        <span class="close-btn" onclick="closeModal()">&times;</span>
+        <div id="detail-body"></div>
+      </div>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
