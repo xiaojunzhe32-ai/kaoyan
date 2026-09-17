@@ -3,3 +3,7 @@ data/
 *.db
 *.log
 .DS_Store
+# 测试文件含登录凭据，不上传
+backend/test_solve.js
+# 部署临时目录
+_deploy/

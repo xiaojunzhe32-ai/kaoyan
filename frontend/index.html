@@ -2,24 +2,57 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>考研错题本 - 智能分析复习工具</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>考研错题本</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 </head>
 <body>
-  <nav class="navbar">
-    <div class="nav-brand">考研错题本</div>
-    <div class="nav-links">
-      <a href="#" class="nav-link active" data-page="list">错题列表</a>
-      <a href="#" class="nav-link" data-page="add">添加错题</a>
-      <a href="#" class="nav-link" data-page="stats">统计看板</a>
+
+  <!-- 登录层 -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-card">
+      <div class="login-logo">📚</div>
+      <h1 class="login-title">考研错题本</h1>
+      <p class="login-sub">登录后继续</p>
+      <div class="login-field">
+        <label for="login-account">手机号</label>
+        <input id="login-account" type="tel" placeholder="请输入手机号" autocomplete="username">
+      </div>
+      <div class="login-field">
+        <label for="login-password">密码</label>
+        <input id="login-password" type="password" placeholder="请输入密码" autocomplete="current-password">
+      </div>
+      <div id="login-error" class="login-error"></div>
+      <button id="login-btn" class="btn btn-accent btn-block" type="button">登 录</button>
+      <p class="login-hint">登录后 30 天内自动保持登录</p>
+    </div>
+  </div>
+
+  <!-- Topbar Navigation -->
+  <nav class="topbar">
+    <div class="topbar-brand">
+      考研错题本
+      <small>智能分析复习工具</small>
+    </div>
+    <div class="topbar-nav" role="tablist">
+      <button class="pill active" data-page="list" role="tab">错题列表</button>
+      <button class="pill" data-page="add" role="tab">添加错题</button>
+      <button class="pill" data-page="stats" role="tab">统计看板</button>
+    </div>
+    <div class="topbar-user">
+      <span class="topbar-account" id="topbar-account">136****6478</span>
+      <button class="logout-btn" id="logout-btn" type="button">退出登录</button>
     </div>
   </nav>
 
-  <main id="app">
-    <!-- 错题列表 -->
-    <section id="page-list" class="page active">
+  <!-- Main Content -->
+  <main class="content">
+
+    <!-- ====== 错题列表 ====== -->
+    <section id="page-list" class="page active" role="tabpanel">
       <div class="toolbar">
+        <h1 class="toolbar-title">错题列表</h1>
         <select id="filter-subject" class="filter-select">
           <option value="all">全部科目</option>
           <option value="数学">数学</option>
@@ -32,18 +65,113 @@
           <option value="unsolved">未解决</option>
           <option value="solved">已解决</option>
         </select>
-        <button class="btn btn-primary" onclick="loadQuestions()">刷新</button>
+        <button class="btn btn-ghost" onclick="loadQuestions()">刷新</button>
       </div>
       <div id="question-list" class="question-list"></div>
       <div id="pagination" class="pagination"></div>
     </section>
 
-    <!-- 添加错题 -->
-    <section id="page-add" class="page">
-      <form id="add-form" class="form-card">
+    <!-- ====== 添加错题 ====== -->
+    <section id="page-add" class="page" role="tabpanel">
+      <form id="add-form" class="form-card" style="max-width:720px">
         <h2>添加错题</h2>
+        <input type="hidden" name="analysis">
+        <input type="hidden" name="solution">
+
+        <!-- 拍照 / 上传区域 -->
+        <div class="image-uploader">
+          <input type="file" id="photo-input" accept="image/*" capture="environment" hidden>
+          <div class="upload-dropzone" id="upload-zone">
+            <div class="upload-icon">📷</div>
+            <div class="upload-title">拍照或上传题目图片</div>
+            <div class="upload-hint">请拍摄清晰的试卷原题（避免屏幕截图），支持公式识别</div>
+            <div class="upload-actions">
+              <button type="button" class="btn btn-primary" onclick="document.getElementById('photo-input').click()">拍照 / 选择图片</button>
+            </div>
+          </div>
+          <div class="upload-preview" id="upload-preview" style="display:none">
+            <img id="preview-img" alt="题目图片预览">
+            <div class="preview-bar">
+              <span id="ocr-status" class="ocr-status">等待识别...</span>
+              <button type="button" class="btn btn-ghost" onclick="resetUpload()">重新拍摄</button>
+            </div>
+            <div id="ocr-result" class="ocr-result" style="display:none">
+              <div class="ocr-result-label">识别出的题目文字：<span id="ocr-source-badge" class="ocr-source-badge" style="display:none"></span></div>
+              <div id="ocr-text" class="ocr-text"></div>
+              <div class="ocr-apply-row">
+                <button type="button" class="btn btn-accent" onclick="applyOcrToForm()">一键填充到表单</button>
+                <button type="button" class="btn btn-ghost" onclick="aiDeepOcr()">AI 深度识别</button>
+              </div>
+              <!-- AI 智能解题结果 -->
+              <div id="solve-panel" class="solve-panel" style="display:none">
+                <div class="solve-head">
+                  <span class="solve-badge">AI 智能解题</span>
+                  <span id="solve-type" class="solve-type"></span>
+                </div>
+                <div class="solve-math-label">识别题目</div>
+                <div id="solve-question" class="solve-math"></div>
+                <div class="solve-math-label" id="lbl-analysis">① 审题</div>
+                <div id="solve-analysis" class="solve-math"></div>
+                <div class="solve-math-label" id="lbl-approach">② 解题思路</div>
+                <div id="solve-approach" class="solve-math"></div>
+                <div class="solve-math-label" id="lbl-points">③ 涉及知识点</div>
+                <div id="solve-points" class="solve-math"></div>
+                <div class="solve-math-label">④ 分步推导</div>
+                <div id="solve-steps" class="solve-steps"></div>
+                <div class="solve-math-label">⑤ 正确答案</div>
+                <div id="solve-answer" class="solve-answer"></div>
+                <div class="solve-math-label" id="lbl-check">⑥ 复核</div>
+                <div id="solve-check" class="solve-math"></div>
+                <div class="ocr-apply-row">
+                  <button type="button" class="btn btn-accent" onclick="saveWithAi()">直接用 AI 结果保存</button>
+                </div>
+              </div>
+              <!-- 自动求解失败的提示 -->
+              <div id="solve-fallback" class="solve-fallback" style="display:none"></div>
+            </div>
+
+            <!-- 多题识别：勾选要保存的题 -->
+            <div id="multi-panel" class="ocr-result" style="display:none">
+              <div class="ocr-result-label">识别到 <b id="multi-count">0</b> 道题，勾选要生成答案的：</div>
+              <div id="multi-list" class="multi-list"></div>
+              <div class="ocr-apply-row">
+                <label class="checkbox-inline"><input type="checkbox" id="multi-all" checked onchange="toggleBatchAll()"> 全选</label>
+                <button type="button" class="btn btn-accent" id="multi-go" onclick="processBatch()">开始生成并核对答案</button>
+              </div>
+              <div id="multi-progress" class="multi-progress" style="display:none"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI 识别与解答的只读结果（不可编辑，AI 输出即最终内容） -->
+        <div id="ai-review" style="display:none">
+          <div class="ai-review-head">
+            <span>AI 识别与解答结果</span>
+            <button type="button" class="btn btn-ghost" onclick="toggleManualEdit()">手动编辑</button>
+          </div>
+          <div class="form-group">
+            <label>题目</label>
+            <div id="ai-q" class="ai-item ai-math"></div>
+          </div>
+          <div class="form-group">
+            <label>正确答案</label>
+            <div id="ai-a" class="ai-item ai-answer"></div>
+          </div>
+          <div class="form-group">
+            <label>解题过程</label>
+            <div id="ai-s" class="ai-item"></div>
+          </div>
+          <div class="form-group" id="fg-analysis"><label>审题</label><div id="ai-analysis" class="ai-item ai-math"></div></div>
+          <div class="form-group" id="fg-approach"><label>解题思路</label><div id="ai-approach" class="ai-item ai-math"></div></div>
+          <div class="form-group" id="fg-points"><label>涉及知识点</label><div id="ai-points" class="ai-item ai-math"></div></div>
+          <div class="form-group" id="fg-check"><label>复核</label><div id="ai-check" class="ai-item ai-math"></div></div>
+          <button type="button" class="btn btn-accent" onclick="saveWithAi()">直接用 AI 结果保存</button>
+          <div class="ai-edit-divider">如需修改，可点击上方「手动编辑」展开输入框</div>
+        </div>
+
+        <div id="manual-fields">
         <div class="form-group">
-          <label>科目 *</label>
+          <label>科目 <span class="required">*</span></label>
           <select name="subject" required>
             <option value="数学">数学</option>
             <option value="英语">英语</option>
@@ -67,7 +195,7 @@
           </select>
         </div>
         <div class="form-group">
-          <label>题目内容 *</label>
+          <label>题目内容 <span class="required">*</span></label>
           <textarea name="question" rows="4" required placeholder="输入题目内容..."></textarea>
         </div>
         <div class="form-group">
@@ -75,12 +203,12 @@
           <textarea name="my_answer" rows="2" placeholder="你写的答案..."></textarea>
         </div>
         <div class="form-group">
-          <label>正确答案 *</label>
+          <label>正确答案 <span class="required">*</span></label>
           <textarea name="correct_answer" rows="2" required placeholder="正确答案..."></textarea>
         </div>
         <div class="form-group">
           <label>错误原因</label>
-          <textarea name="error_reason" rows="2" placeholder="如: 计算错误/概念不清/公式记错..."></textarea>
+          <textarea name="error_reason" rows="2" placeholder="如: 计算错误 / 概念不清 / 公式记错..."></textarea>
         </div>
         <div class="form-group">
           <label>难度</label>
@@ -93,23 +221,34 @@
           </select>
         </div>
         <button type="submit" class="btn btn-primary">提交</button>
+        </div>
       </form>
     </section>
 
-    <!-- 统计看板 -->
-    <section id="page-stats" class="page">
-      <div id="stats-content" class="stats-grid"></div>
+    <!-- ====== 统计看板 ====== -->
+    <section id="page-stats" class="page" role="tabpanel">
+      <div class="toolbar">
+        <h1 class="toolbar-title">统计看板</h1>
+      </div>
+      <div id="stats-content"></div>
     </section>
 
-    <!-- 详情弹窗 -->
-    <div id="detail-modal" class="modal" style="display:none;">
-      <div class="modal-content">
-        <span class="close-btn" onclick="closeModal()">&times;</span>
-        <div id="detail-body"></div>
-      </div>
-    </div>
   </main>
 
-  <script src="app.js"></script>
+  <!-- Detail Modal -->
+  <div id="detail-modal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>错题详情</h2>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div id="detail-body" class="modal-body"></div>
+    </div>
+  </div>
+
+  <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+   <script defer src='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js'></script>
+   <script defer src='https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js'></script>
+   <script src="app.js"></script>
 </body>
 </html>
